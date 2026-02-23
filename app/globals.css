@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  --color-onyx: #0A0A0A;
+  --color-sidebar: #050505;
+  --color-card: #0D0D0D;
+  --color-card-alt: #111111;
+  --color-accent: #3F6A24;
+  --color-accent-mid: #5A8A3A;
+  --color-accent-light: #A8C69F;
+  --color-platinum: #C0C0C0;
+  --color-muted: #555555;
+  --color-border: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-onyx text-white font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display uppercase tracking-tight;
+  }
+}
+
+.platinum-edge {
+  border: 1px solid var(--color-border);
+  border-top: 2px solid var(--color-accent);
+}
+
+.mono-tag {
+  @apply font-mono text-[10px] uppercase tracking-widest text-muted;
+}
