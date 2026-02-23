@@ -1,52 +1,48 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useData } from '@/context/data-context';
+import { useData, Post } from '@/context/data-context';
 import { useAuth } from '@/context/auth-context';
 import { cn, formatDate } from '@/lib/utils';
-import { 
-  Plus, 
-  Calendar as CalendarIcon, 
-  Instagram, 
-  Linkedin, 
-  Twitter, 
+import {
+  Plus,
+  Calendar as CalendarIcon,
+  Instagram,
+  Linkedin,
+  Twitter,
   Youtube,
   CheckCircle2,
   Clock,
   Filter,
   LayoutGrid,
-  List
+  List,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function ContentCalendarOS() {
-  const { clients } = useData();
+  const { clients, posts, addPost } = useData();
   const { role } = useAuth();
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [isAddingPost, setIsAddingPost] = useState(false);
 
-  // Mock content data for visualization
-  const posts = React.useMemo(() => [
-    {
-      id: '1',
-      clientId: '1',
-      platform: 'Instagram',
-      postType: 'Reel',
-      hook: 'How we scaled to $10k/mo',
-      scheduledDate: new Date().toISOString(),
-      status: 'Scheduled',
-      pillar: 'Scaling',
-    },
-    {
-      id: '2',
-      clientId: '1',
-      platform: 'LinkedIn',
-      postType: 'Authority Post',
-      hook: 'The future of AI in 2026',
-      scheduledDate: new Date(new Date().getTime() + 86400000).toISOString(),
-      status: 'Draft',
-      pillar: 'Efficiency',
-    }
-  ], []);
+  const handleAddPost = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newPost: Partial<Post> = {
+      clientId: formData.get('clientId') as string,
+      platform: formData.get('platform') as Post['platform'],
+      postType: formData.get('postType') as string,
+      hook: formData.get('hook') as string,
+      scheduledDate: formData.get('scheduledDate') as string,
+      status: formData.get('status') as Post['status'],
+      pillar: formData.get('pillar') as string,
+      content: formData.get('content') as string,
+      assets: []
+    } as any;
+    addPost(newPost as any);
+    setIsAddingPost(false);
+  };
 
   const platformIcons: any = {
     Instagram: Instagram,
@@ -64,20 +60,23 @@ export default function ContentCalendarOS() {
         </div>
         <div className="flex gap-4">
           <div className="bg-card border border-border flex p-1 rounded-sm">
-            <button 
+            <button
               onClick={() => setView('grid')}
               className={cn("p-2 rounded-sm transition-all", view === 'grid' ? "bg-accent text-white" : "text-muted hover:text-white")}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={() => setView('list')}
               className={cn("p-2 rounded-sm transition-all", view === 'list' ? "bg-accent text-white" : "text-muted hover:text-white")}
             >
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button className="bg-accent hover:bg-accent-mid text-white px-6 py-3 font-display flex items-center gap-2 transition-all">
+          <button
+            onClick={() => setIsAddingPost(true)}
+            className="bg-accent hover:bg-accent-mid text-white px-6 py-3 font-display flex items-center gap-2 transition-all"
+          >
             <Plus className="w-4 h-4" />
             Plan Post
           </button>
@@ -107,7 +106,7 @@ export default function ContentCalendarOS() {
                   {post.status}
                 </span>
               </div>
-              
+
               <div>
                 <p className="mono-tag text-[8px] text-muted mb-1">{post.postType}</p>
                 <h4 className="text-sm font-medium uppercase tracking-wider line-clamp-2">{post.hook}</h4>
@@ -123,13 +122,100 @@ export default function ContentCalendarOS() {
             </motion.div>
           );
         })}
-        
+
         {/* Empty Slot Placeholder */}
-        <div className="border border-dashed border-border rounded-sm flex flex-col items-center justify-center p-12 text-center group hover:border-accent transition-all cursor-pointer">
+        <div
+          onClick={() => setIsAddingPost(true)}
+          className="border border-dashed border-border rounded-sm flex flex-col items-center justify-center p-12 text-center group hover:border-accent transition-all cursor-pointer"
+        >
           <Plus className="w-8 h-8 text-muted group-hover:text-accent mb-4 transition-colors" />
           <p className="mono-tag text-[10px]">Add Post to Pipeline</p>
         </div>
       </div>
+
+      {/* Add Post Modal */}
+      <AnimatePresence>
+        {isAddingPost && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddingPost(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl bg-card border border-border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="platinum-edge p-8 overflow-y-auto">
+                <div className="flex justify-between items-start mb-8">
+                  <h2 className="text-3xl font-display tracking-tighter">Plan New Post</h2>
+                  <button onClick={() => setIsAddingPost(false)} className="text-muted hover:text-white transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <form onSubmit={handleAddPost} className="space-y-6">
+                  <div>
+                    <label className="mono-tag block mb-2">Select Client</label>
+                    <select name="clientId" required className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent">
+                      {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="mono-tag block mb-2">Platform</label>
+                      <select name="platform" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent">
+                        <option>Instagram</option>
+                        <option>LinkedIn</option>
+                        <option>Twitter</option>
+                        <option>YouTube</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mono-tag block mb-2">Post Type</label>
+                      <input name="postType" placeholder="e.g. Reel, Carousel, Authority Post" required className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mono-tag block mb-2">Hook / Title</label>
+                    <input name="hook" required className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="col-span-1">
+                      <label className="mono-tag block mb-2">Status</label>
+                      <select name="status" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent">
+                        <option>Draft</option>
+                        <option>Review</option>
+                        <option>Scheduled</option>
+                        <option>Published</option>
+                      </select>
+                    </div>
+                    <div className="col-span-1">
+                      <label className="mono-tag block mb-2">Content Pillar</label>
+                      <input name="pillar" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="mono-tag block mb-2">Date</label>
+                      <input name="scheduledDate" type="date" required className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mono-tag block mb-2">Raw Content / Caption</label>
+                    <textarea name="content" rows={4} className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                  </div>
+                  <div className="flex gap-4 pt-4 border-t border-border">
+                    <button type="submit" className="flex-1 bg-accent text-white py-4 font-display hover:bg-accent-mid transition-all">Schedule Post</button>
+                    <button type="button" onClick={() => setIsAddingPost(false)} className="px-8 border border-border text-muted hover:text-white transition-all">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

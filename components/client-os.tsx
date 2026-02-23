@@ -4,27 +4,28 @@ import React, { useState } from 'react';
 import { useData, Client } from '@/context/data-context';
 import { useAuth } from '@/context/auth-context';
 import { formatCurrency, cn, formatDate } from '@/lib/utils';
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  ExternalLink, 
-  User, 
-  Mail, 
+import {
+  Search,
+  Plus,
+  MoreHorizontal,
+  ExternalLink,
+  User,
+  Mail,
   Phone,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function ClientOS() {
-  const { clients, addClient, updateClient } = useData();
+export default function ClientOS({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
+  const { clients, addClient, updateClient, deleteClient } = useData();
   const { role } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isAddingClient, setIsAddingClient] = useState(false);
 
-  const filteredClients = clients.filter(c => 
+  const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.contactName.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -43,12 +44,13 @@ export default function ClientOS() {
       email: formData.get('email') as string,
       contactName: formData.get('contactName') as string,
       niche: formData.get('niche') as string,
-      shadowAvatar: '',
-      bleedingNeck: '',
-      contentPillars: [],
+      shadowAvatar: formData.get('shadowAvatar') as string,
+      bleedingNeck: formData.get('bleedingNeck') as string,
+      contentPillars: (formData.get('contentPillars') as string).split(',').map(s => s.trim()).filter(Boolean),
       relationshipHealth: 'Neutral',
       onboardingStatus: 0,
       notes: '',
+      startDate: new Date().toISOString().split('T')[0],
     };
     addClient(newClient);
     setIsAddingClient(false);
@@ -61,7 +63,7 @@ export default function ClientOS() {
           <h1 className="text-4xl font-display tracking-tighter">Client OS</h1>
           <p className="mono-tag mt-1">Relationship Management & Revenue Gates</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsAddingClient(true)}
           className="bg-accent hover:bg-accent-mid text-white px-6 py-3 font-display flex items-center gap-2 transition-all"
         >
@@ -74,8 +76,8 @@ export default function ClientOS() {
       <div className="flex gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search Clients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -108,8 +110,8 @@ export default function ClientOS() {
           </thead>
           <tbody>
             {filteredClients.map((client) => (
-              <tr 
-                key={client.id} 
+              <tr
+                key={client.id}
                 className="border-b border-border hover:bg-white/5 transition-colors cursor-pointer group"
                 onClick={() => setSelectedClient(client)}
               >
@@ -128,8 +130,8 @@ export default function ClientOS() {
                   <span className={cn(
                     "px-2 py-0.5 rounded-full text-[8px] font-mono uppercase tracking-widest",
                     client.status === 'Active' ? "bg-accent/20 text-accent" :
-                    client.status === 'Onboarding' ? "bg-blue-500/20 text-blue-500" :
-                    "bg-muted/20 text-muted"
+                      client.status === 'Onboarding' ? "bg-blue-500/20 text-blue-500" :
+                        "bg-muted/20 text-muted"
                   )}>
                     {client.status}
                   </span>
@@ -152,8 +154,8 @@ export default function ClientOS() {
                     <div className={cn(
                       "w-1.5 h-1.5 rounded-full",
                       client.relationshipHealth === 'Good' ? "bg-accent" :
-                      client.relationshipHealth === 'At Risk' ? "bg-red-500" :
-                      "bg-yellow-500"
+                        client.relationshipHealth === 'At Risk' ? "bg-red-500" :
+                          "bg-yellow-500"
                     )} />
                     <span className="mono-tag text-[10px]">{client.relationshipHealth}</span>
                   </div>
@@ -173,14 +175,14 @@ export default function ClientOS() {
       <AnimatePresence>
         {selectedClient && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedClient(null)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -195,7 +197,7 @@ export default function ClientOS() {
                     </div>
                     <p className="mono-tag">Client ID: {selectedClient.id} • Started {formatDate(selectedClient.startDate)}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedClient(null)}
                     className="p-2 text-muted hover:text-white transition-colors"
                   >
@@ -298,10 +300,26 @@ export default function ClientOS() {
                 <div className="mt-12 pt-8 border-t border-border flex justify-between items-center">
                   <div className="flex gap-4">
                     <button className="bg-accent text-white px-6 py-2 mono-tag hover:bg-accent-mid transition-colors">Edit Profile</button>
-                    <button className="border border-border text-white px-6 py-2 mono-tag hover:bg-white/5 transition-colors">View Tasks</button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('fulfillment');
+                        setSelectedClient(null);
+                      }}
+                      className="border border-border text-white px-6 py-2 mono-tag hover:bg-white/5 transition-colors"
+                    >
+                      View Tasks
+                    </button>
                   </div>
                   {role === 'CEO' && (
-                    <button className="text-red-500 mono-tag hover:underline">Terminate Contract</button>
+                    <button
+                      onClick={() => {
+                        deleteClient(selectedClient.id);
+                        setSelectedClient(null);
+                      }}
+                      className="text-red-500 mono-tag hover:underline"
+                    >
+                      Terminate Contract
+                    </button>
                   )}
                 </div>
               </div>
@@ -314,14 +332,14 @@ export default function ClientOS() {
       <AnimatePresence>
         {isAddingClient && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddingClient(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -378,6 +396,20 @@ export default function ClientOS() {
                       <input name="ltv" type="number" required className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="mono-tag block mb-2">Shadow Avatar</label>
+                      <input name="shadowAvatar" required placeholder="e.g. Scaling CEO" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                    </div>
+                    <div>
+                      <label className="mono-tag block mb-2">Bleeding Neck Problem</label>
+                      <input name="bleedingNeck" required placeholder="e.g. Operations bottleneck" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mono-tag block mb-2">Content Pillars (Comma Separated)</label>
+                    <input name="contentPillars" required placeholder="e.g. Growth, Operations, Mindset" className="w-full bg-[#050505] border border-border p-3 text-white focus:outline-none focus:border-accent" />
+                  </div>
                   <div className="flex gap-4 pt-4">
                     <button type="submit" className="flex-1 bg-accent text-white py-4 font-display hover:bg-accent-mid transition-all">Initialize Onboarding</button>
                     <button type="button" onClick={() => setIsAddingClient(false)} className="px-8 border border-border text-muted hover:text-white transition-all">Cancel</button>
@@ -391,5 +423,3 @@ export default function ClientOS() {
     </div>
   );
 }
-
-import { Lock } from 'lucide-react';

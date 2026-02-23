@@ -20,11 +20,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedRole = sessionStorage.getItem('nerozarb_role') as UserRole;
     if (savedRole) {
-      setTimeout(() => setRole(savedRole), 0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRole(savedRole);
     }
-    // Use a small delay or just accept that we need to set this after mount
-    const timer = setTimeout(() => setIsInitialized(true), 0);
-    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsInitialized(true);
   }, []);
 
   const login = (passphrase: string) => {

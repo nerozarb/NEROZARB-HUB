@@ -24,9 +24,9 @@ export default function MainLayout() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <CommandCenter />;
+        return <CommandCenter setActiveTab={setActiveTab} />;
       case 'clients':
-        return <ClientOS />;
+        return <ClientOS setActiveTab={setActiveTab} />;
       case 'fulfillment':
         return <FulfillmentOS />;
       case 'content':
@@ -34,14 +34,14 @@ export default function MainLayout() {
       case 'vault':
         return <KnowledgeVaultOS />;
       default:
-        return <CommandCenter />;
+        return <CommandCenter setActiveTab={setActiveTab} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-onyx flex">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      
+
       <main className="flex-1 ml-64 p-8 lg:p-12">
         <AnimatePresence mode="wait">
           <motion.div

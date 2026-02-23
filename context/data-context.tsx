@@ -40,14 +40,42 @@ export interface Task {
   completedAt?: string;
 }
 
+export interface Post {
+  id: string;
+  clientId: string; // To link post to a client
+  platform: 'Instagram' | 'LinkedIn' | 'Twitter' | 'YouTube';
+  postType: string;
+  hook: string;
+  scheduledDate: string;
+  status: 'Draft' | 'Scheduled' | 'Published';
+  pillar: string;
+}
+
+export interface Protocol {
+  id: string;
+  title: string;
+  category: 'SOPs' | 'AI Prompts' | 'Client Assets' | 'Legal' | 'Strategy';
+  pillar: string;
+  updatedAt: string;
+  content: string; // To hold the actual protocol/prompt text
+}
+
 interface DataContextType {
   clients: Client[];
   tasks: Task[];
+  posts: Post[];
+  protocols: Protocol[];
+  isLoaded: boolean;
   addClient: (client: Omit<Client, 'id' | 'startDate'>) => void;
   updateClient: (id: string, updates: Partial<Client>) => void;
+  deleteClient: (id: string) => void; // Added delete target
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
+  addPost: (post: Omit<Post, 'id'>) => void;
+  updatePost: (id: string, updates: Partial<Post>) => void;
+  deletePost: (id: string) => void;
+  addProtocol: (protocol: Omit<Protocol, 'id' | 'updatedAt'>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -57,18 +85,26 @@ const STORAGE_KEY = 'nerozarb-os-v2';
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [protocols, setProtocols] = useState<Protocol[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
-      const parsed = JSON.parse(savedData);
-      // Use functional updates to avoid lint issues if possible, 
-      // but the issue is the sync call in effect.
-      // We'll wrap in a timeout to move it out of the sync execution path of the effect.
-      setTimeout(() => {
+      try {
+        const parsed = JSON.parse(savedData);
+        /* eslint-disable react-hooks/set-state-in-effect */
         setClients(parsed.clients || []);
         setTasks(parsed.tasks || []);
-      }, 0);
+        setPosts(parsed.posts || []);
+        setProtocols(parsed.protocols || []);
+        /* eslint-enable react-hooks/set-state-in-effect */
+      } catch (e) {
+        console.error("Failed to parse local storage data", e);
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoaded(true);
     } else {
       // Initial Mock Data for first launch
       const initialClients: Client[] = [
@@ -93,18 +129,41 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           notes: 'Key client.',
         }
       ];
-      setTimeout(() => {
-        setClients(initialClients);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients: initialClients, tasks: [] }));
-      }, 0);
+
+      const initialProtocols: Protocol[] = [
+        { id: '1', title: 'Client Onboarding Flow', category: 'SOPs', pillar: 'Ops', updatedAt: new Date().toISOString().split('T')[0], content: "Step 1: Welcome email\nStep 2: Slack channel setup" },
+        { id: '2', title: 'Viral Reel Script Structure', category: 'AI Prompts', pillar: 'Content', updatedAt: new Date().toISOString().split('T')[0], content: "Act as an expert copywriter. Write a reel script exploring the bleeding neck of [Audience]." },
+      ];
+
+      const initialPosts: Post[] = [
+        {
+          id: '1',
+          clientId: '1',
+          platform: 'Instagram',
+          postType: 'Reel',
+          hook: 'How we scaled to $10k/mo',
+          scheduledDate: new Date().toISOString(),
+          status: 'Scheduled',
+          pillar: 'Scaling',
+        }
+      ];
+
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setClients(initialClients);
+      setProtocols(initialProtocols);
+      setPosts(initialPosts);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients: initialClients, tasks: [], posts: initialPosts, protocols: initialProtocols }));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    if (clients.length > 0 || tasks.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, tasks }));
+    if (isLoaded) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, tasks, posts, protocols }));
     }
-  }, [clients, tasks]);
+  }, [clients, tasks, posts, protocols, isLoaded]);
 
   const addClient = (client: Omit<Client, 'id' | 'startDate'>) => {
     const newClient: Client = {
@@ -112,11 +171,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       id: Math.random().toString(36).substr(2, 9),
       startDate: new Date().toISOString(),
     };
-    setClients(prev => [...prev, newClient]);
+    setClients((prev: Client[]) => [...prev, newClient]);
   };
 
   const updateClient = (id: string, updates: Partial<Client>) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    setClients((prev: Client[]) => prev.map((c: Client) => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteClient = (id: string) => {
+    setClients((prev: Client[]) => prev.filter((c: Client) => c.id !== id));
   };
 
   const addTask = (task: Omit<Task, 'id' | 'createdAt'>) => {
@@ -125,19 +188,50 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       id: Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString(),
     };
-    setTasks(prev => [...prev, newTask]);
+    setTasks((prev: Task[]) => [...prev, newTask]);
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    setTasks((prev: Task[]) => prev.map((t: Task) => t.id === id ? { ...t, ...updates } : t));
   };
 
   const deleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    setTasks((prev: Task[]) => prev.filter((t: Task) => t.id !== id));
+  };
+
+  const addPost = (post: Omit<Post, 'id'>) => {
+    const newPost: Post = {
+      ...post,
+      id: Math.random().toString(36).substr(2, 9),
+    };
+    setPosts((prev: Post[]) => [...prev, newPost]);
+  };
+
+  const updatePost = (id: string, updates: Partial<Post>) => {
+    setPosts((prev: Post[]) => prev.map((p: Post) => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const deletePost = (id: string) => {
+    setPosts((prev: Post[]) => prev.filter((p: Post) => p.id !== id));
+  };
+
+  const addProtocol = (protocol: Omit<Protocol, 'id' | 'updatedAt'>) => {
+    const newProtocol: Protocol = {
+      ...protocol,
+      id: Math.random().toString(36).substr(2, 9),
+      updatedAt: new Date().toISOString().split('T')[0],
+    };
+    setProtocols((prev: Protocol[]) => [...prev, newProtocol]);
   };
 
   return (
-    <DataContext.Provider value={{ clients, tasks, addClient, updateClient, addTask, updateTask, deleteTask }}>
+    <DataContext.Provider value={{
+      clients, tasks, posts, protocols, isLoaded,
+      addClient, updateClient, deleteClient,
+      addTask, updateTask, deleteTask,
+      addPost, updatePost, deletePost,
+      addProtocol
+    }}>
       {children}
     </DataContext.Provider>
   );

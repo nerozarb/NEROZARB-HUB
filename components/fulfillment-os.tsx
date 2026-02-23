@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { useData, Task } from '@/context/data-context';
 import { useAuth } from '@/context/auth-context';
 import { cn, formatDate } from '@/lib/utils';
-import { 
-  Plus, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  User, 
+import {
+  Plus,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  User,
   Layers,
   Calendar,
   MoreVertical,
@@ -52,7 +52,7 @@ export default function FulfillmentOS() {
           <h1 className="text-4xl font-display tracking-tighter">Fulfillment OS</h1>
           <p className="mono-tag mt-1">Sprint Stages & Task Pipelines</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsAddingTask(true)}
           className="bg-accent hover:bg-accent-mid text-white px-6 py-3 font-display flex items-center gap-2 transition-all"
         >
@@ -66,15 +66,26 @@ export default function FulfillmentOS() {
         {statuses.map((status) => {
           const statusTasks = tasks.filter(t => t.status === status);
           return (
-            <div key={status} className="space-y-4">
+            <div
+              key={status}
+              className="space-y-4"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const taskId = e.dataTransfer.getData('taskId');
+                if (taskId) {
+                  updateTask(taskId, { status: status as any });
+                }
+              }}
+            >
               <div className="flex justify-between items-center px-2">
                 <div className="flex items-center gap-2">
                   <div className={cn(
                     "w-1.5 h-1.5 rounded-full",
                     status === 'Done' ? "bg-accent" :
-                    status === 'Review' ? "bg-yellow-500" :
-                    status === 'In Progress' ? "bg-blue-500" :
-                    "bg-muted"
+                      status === 'Review' ? "bg-yellow-500" :
+                        status === 'In Progress' ? "bg-blue-500" :
+                          "bg-muted"
                   )} />
                   <h3 className="mono-tag text-[10px]">{status}</h3>
                 </div>
@@ -87,14 +98,16 @@ export default function FulfillmentOS() {
                     key={task.id}
                     layoutId={task.id}
                     onClick={() => setSelectedTask(task)}
+                    draggable
+                    onDragStart={(e: any) => e.dataTransfer.setData('taskId', task.id)}
                     className="bg-card border border-border p-4 rounded-sm cursor-pointer hover:border-accent transition-all group"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <span className={cn(
                         "text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-sm",
                         task.priority === 'Critical' ? "bg-red-500/20 text-red-500" :
-                        task.priority === 'High' ? "bg-orange-500/20 text-orange-500" :
-                        "bg-blue-500/20 text-blue-500"
+                          task.priority === 'High' ? "bg-orange-500/20 text-orange-500" :
+                            "bg-blue-500/20 text-blue-500"
                       )}>
                         {task.priority}
                       </span>
@@ -128,14 +141,14 @@ export default function FulfillmentOS() {
       <AnimatePresence>
         {selectedTask && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedTask(null)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -156,7 +169,7 @@ export default function FulfillmentOS() {
                   <div className="space-y-4">
                     <div>
                       <label className="mono-tag text-[8px] block mb-1">Status</label>
-                      <select 
+                      <select
                         value={selectedTask.status}
                         onChange={(e) => updateTask(selectedTask.id, { status: e.target.value as any })}
                         className="w-full bg-[#050505] border border-border p-2 text-xs uppercase tracking-widest"
@@ -194,9 +207,17 @@ export default function FulfillmentOS() {
                 </div>
 
                 <div className="flex gap-4 pt-4 border-t border-border">
-                  <button className="flex-1 bg-accent text-white py-3 font-display hover:bg-accent-mid transition-all">Complete Task</button>
+                  <button
+                    onClick={() => {
+                      updateTask(selectedTask.id, { status: 'Done' });
+                      setSelectedTask(null);
+                    }}
+                    className="flex-1 bg-accent text-white py-3 font-display hover:bg-accent-mid transition-all"
+                  >
+                    Complete Task
+                  </button>
                   {role === 'CEO' && (
-                    <button 
+                    <button
                       onClick={() => {
                         deleteTask(selectedTask.id);
                         setSelectedTask(null);
@@ -217,14 +238,14 @@ export default function FulfillmentOS() {
       <AnimatePresence>
         {isAddingTask && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddingTask(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}

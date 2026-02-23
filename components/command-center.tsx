@@ -4,55 +4,55 @@ import React from 'react';
 import { useData } from '@/context/data-context';
 import { useAuth } from '@/context/auth-context';
 import { formatCurrency, cn } from '@/lib/utils';
-import { 
-  TrendingUp, 
-  Users, 
-  CheckCircle2, 
+import {
+  TrendingUp,
+  Users,
+  CheckCircle2,
   AlertCircle,
   ArrowUpRight,
   Clock
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export default function CommandCenter() {
+export default function CommandCenter({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const { clients, tasks } = useData();
   const { role } = useAuth();
 
   const activeClients = clients.filter(c => c.status === 'Active').length;
   const pendingTasks = tasks.filter(t => t.status !== 'Done').length;
   const criticalTasks = tasks.filter(t => t.priority === 'Critical' && t.status !== 'Done').length;
-  
+
   const totalLtv = clients.reduce((acc, curr) => acc + curr.ltv, 0);
   const mrr = clients.reduce((acc, curr) => acc + curr.contractValue, 0);
 
   const stats = [
-    { 
-      label: 'Active Clients', 
-      value: activeClients, 
-      icon: Users, 
+    {
+      label: 'Active Clients',
+      value: activeClients,
+      icon: Users,
       color: 'text-accent',
-      ceoOnly: false 
+      ceoOnly: false
     },
-    { 
-      label: 'Pending Tasks', 
-      value: pendingTasks, 
-      icon: Clock, 
+    {
+      label: 'Pending Tasks',
+      value: pendingTasks,
+      icon: Clock,
       color: 'text-blue-400',
-      ceoOnly: false 
+      ceoOnly: false
     },
-    { 
-      label: 'Critical Alerts', 
-      value: criticalTasks, 
-      icon: AlertCircle, 
+    {
+      label: 'Critical Alerts',
+      value: criticalTasks,
+      icon: AlertCircle,
       color: 'text-red-500',
-      ceoOnly: false 
+      ceoOnly: false
     },
-    { 
-      label: 'Monthly Revenue', 
-      value: formatCurrency(mrr), 
-      icon: TrendingUp, 
+    {
+      label: 'Monthly Revenue',
+      value: formatCurrency(mrr),
+      icon: TrendingUp,
       color: 'text-accent-light',
-      ceoOnly: true 
+      ceoOnly: true
     },
   ];
 
@@ -100,7 +100,10 @@ export default function CommandCenter() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-display">Active Sprints</h2>
-            <button className="mono-tag text-accent hover:underline flex items-center gap-1">
+            <button
+              onClick={() => setActiveTab('fulfillment')}
+              className="mono-tag text-accent hover:underline flex items-center gap-1"
+            >
               View All <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
@@ -132,8 +135,8 @@ export default function CommandCenter() {
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-[8px] font-mono uppercase tracking-widest",
                           task.priority === 'Critical' ? "bg-red-500/20 text-red-500" :
-                          task.priority === 'High' ? "bg-orange-500/20 text-orange-500" :
-                          "bg-blue-500/20 text-blue-500"
+                            task.priority === 'High' ? "bg-orange-500/20 text-orange-500" :
+                              "bg-blue-500/20 text-blue-500"
                         )}>
                           {task.priority}
                         </span>
@@ -166,19 +169,19 @@ export default function CommandCenter() {
                   <span className={cn(
                     "text-[8px] font-mono uppercase tracking-widest",
                     client.relationshipHealth === 'Good' ? "text-accent" :
-                    client.relationshipHealth === 'At Risk' ? "text-red-500" :
-                    "text-yellow-500"
+                      client.relationshipHealth === 'At Risk' ? "text-red-500" :
+                        "text-yellow-500"
                   )}>
                     {client.relationshipHealth}
                   </span>
                 </div>
                 <div className="w-full h-1 bg-border rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={cn(
                       "h-full transition-all duration-500",
                       client.relationshipHealth === 'Good' ? "bg-accent" :
-                      client.relationshipHealth === 'At Risk' ? "bg-red-500" :
-                      "bg-yellow-500"
+                        client.relationshipHealth === 'At Risk' ? "bg-red-500" :
+                          "bg-yellow-500"
                     )}
                     style={{ width: `${client.onboardingStatus}%` }}
                   />
